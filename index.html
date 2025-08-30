@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Entrenamiento Diario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Blue and Yellow to match the team's colors -->
+    <!-- Application Structure Plan: A dashboard-style SPA with a focus on granular detail. A dropdown menu at the top serves as the main navigation for selecting one of the 40 weeks. The main content area displays a series of interactive cards, one for each day of the week, that can be expanded to show a detailed daily schedule. This structure was chosen to transform the high-level 40-week plan into an actionable, day-by-day guide, which is the most logical and user-friendly format for a coach to follow and plan with. -->
+    <!-- Visualization & Content Choices: Report Info: Weekly and daily schedule -> Goal: Organize/Inform -> Method: Dropdown for Week Selector, Collapsible Cards for Days (HTML/Tailwind/JS) -> Interaction: Select a week to update content, click a day to show/hide details. Justification: This is the most efficient way to present a large volume of sequential data, preventing page bloat while keeping all information readily accessible. | Report Info: Specific exercises and timings -> Goal: Instruct -> Method: Formatted Text within Cards -> Interaction: N/A. Justification: Clear and direct presentation for a user (coach) who needs to follow instructions precisely. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b1f3c; /* Dark Blue */
+        }
+        .daily-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            background-color: #1a3258; /* Lighter Blue */
+            color: #f0f0f0; /* Off-white for better readability */
+        }
+        .daily-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .daily-card-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        .daily-card-content {
+            display: none;
+        }
+        .daily-card-content.show {
+            display: block;
+        }
+    </style>
+</head>
+<body class="text-white">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+        
+        <header class="text-center mb-10 flex flex-col items-center">
+            <!-- Using a placeholder image for the logo with the team name and colors -->
+            <img src="https://placehold.co/128x128/0b1f3c/ffcc00?text=TIGRES+SC" alt="Logo de Tigres Santa Catarina" class="w-32 h-32 mb-4 rounded-full shadow-lg border-4 border-yellow-400">
+            <h1 class="text-3xl sm:text-4xl font-bold text-yellow-400">Plan de Entrenamiento Detallado (40 Semanas)</h1>
+            <p class="text-lg text-white mt-2">Guía semana a semana para entrenadores y atletas de la liga Tigres Santa Catarina.</p>
+        </header>
+
+        <section class="mb-8 flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <div class="flex flex-col items-center">
+                <label for="category-select" class="text-xl font-semibold text-white mb-2">Seleccionar Categoría:</label>
+                <select id="category-select" class="px-4 py-2 rounded-lg border-2 border-yellow-400 bg-blue-800 shadow-sm text-lg font-medium focus:outline-none focus:ring-2 focus:ring-yellow-400 text-white">
+                    <option value="3-4">Biberón (3-4 Años)</option>
+                    <option value="5-6">Pre-Moyote (5-6 Años)</option>
+                    <option value="7-8">Moyote (7-8 Años)</option>
+                    <option value="9-10">Pewee (9-10 Años)</option>
+                    <option value="11-12">Pequeña (11-12 Años)</option>
+                </select>
+            </div>
+            <div class="flex flex-col items-center">
+                <label for="week-select" class="text-xl font-semibold text-white mb-2">Seleccionar Semana:</label>
+                <select id="week-select" class="px-4 py-2 rounded-lg border-2 border-yellow-400 bg-blue-800 shadow-sm text-lg font-medium focus:outline-none focus:ring-2 focus:ring-yellow-400 text-white">
+                </select>
+            </div>
+        </section>
+
+        <main id="daily-plan-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        </main>
+
+        <footer class="text-center mt-12 py-4 border-t border-blue-600">
+            <p class="text-blue-200">Cada plan es una guía; la adaptación al atleta es la clave del éxito.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const planData = {};
+            
+            const phaseTitle = (week) => {
+                if (week >= 1 && week <= 12) return 'Pretemporada';
+                if (week >= 13 && week <= 32) return 'Temporada';
+                if (week >= 33 && week <= 37) return 'Transición';
+                return 'Pico de Rendimiento';
+            };
+
+            // Data for 3-4 year old category
+            // This array of objects provides a variety of activities that progressively increase in difficulty
+            // to be cycled through over the 40-week plan.
+            const dailyActivities_3_4 = [
+                // Week 1-5
+                {
+                    lunes: { physical: 'Juegos de correr y saltar, como "El conejo salta". Práctica de lanzar y atrapar pelotas suaves con ambas manos.', technical: 'Juegos de "golpear" la pelota con el bate en el tee, sin importar la fuerza. Foco en la diversión.', mental: 'Aprender a compartir las pelotas y los bates. Aplaudir a los compañeros por un buen intento.' },
+                    martes: { physical: 'Carreras de relevos simples. Juegos de equilibrio como "caminar en la línea".', technical: 'Lanzar y atrapar pelotas de colores. Practicar cómo correr a la primera base.', mental: 'Juegos para aprender los nombres de los compañeros. Practicar "chocar los cinco".' },
+                    miercoles: { physical: 'Imitar animales (caminata de oso, salto de rana). Arrastrarse por el suelo.', technical: 'Bateo de "pelotas locas" (pelotas de goma que rebotan). Fildeo de pelotas rodantes con las manos.', mental: 'Contar hasta tres para lanzar la pelota. Canciones sobre el béisbol.' },
+                    jueves: { physical: 'Juegos de "Luz roja, luz verde" para practicar arranques y paradas. Saltar en un solo pie.', technical: 'Lanzar pelotas de espuma a un objetivo. Práctica de fildeo de pelotas lanzadas por el entrenador.', mental: 'Aprender a escuchar al entrenador. Practicar a decir "¡Gracias!" al final del entrenamiento.' },
+                    viernes: { physical: 'Carreras cortas. Juegos de atrapar al entrenador. Saltar sobre pequeños obstáculos (sin riesgo).', technical: 'Juegos de bateo. Lanzar pelotas a un cubo grande. Correr las bases en orden.', mental: 'Juego libre con las pelotas. Enfatizar que lo importante es divertirse y hacer amigos.' }
+                },
+                // Week 6-10
+                {
+                    lunes: { physical: 'Juegos de "Congelados" y "Carrera de cangrejos" para desarrollar la coordinación. Circuitos de saltos en un pie.', technical: 'Practicar bateo con "la mano fantasma" para mejorar la técnica. Fildeo de rodadas con un guante para niños.', mental: 'Entender la importancia de la posición del cuerpo al batear y lanzar. "Hacer un 5" a los compañeros.' },
+                    martes: { physical: 'Carreras de relevos con giros. Caminar en una línea recta y hacia atrás. Saltar de lado a lado.', technical: 'Lanzar pelotas a un compañero. Practicar el lanzamiento a la primera base desde diferentes posiciones.', mental: 'Aprender a gritar "¡Mía!" al fildeo de una pelota. Practicar la comunicación verbal.' },
+                    miercoles: { physical: 'Imitar animales más complejos (mono, canguro). Arrastrarse por túneles de tela. Saltar sobre colchonetas.', technical: 'Bateo de "pelotas locas" para reacción. Fildeo de roletazos rodantes, con la mano izquierda y derecha.', mental: 'Juegos de memoria para recordar las reglas básicas. Cantar canciones para aprender las bases.' },
+                    jueves: { physical: 'Juegos de "Sígueme" para practicar el movimiento. Correr en zigzag entre conos. Saltos con rodillas al pecho.', technical: 'Lanzar pelotas de espuma a objetivos en movimiento. Práctica de fildeo de pelotas lanzadas al aire por el entrenador.', mental: 'Aprender a escuchar al entrenador y al compañero. Practicar a decir "¡Vamos!"' },
+                    viernes: { physical: 'Carreras cortas con giros. Juegos de atrapar al entrenador con un pañuelo. Saltar sobre pequeños obstáculos de forma consecutiva.', technical: 'Juegos de bateo con picheo suave. Lanzar pelotas a un cubo grande de forma consecutiva. Correr a las bases.', mental: 'Juego libre con las pelotas y enfocar en la diversión y hacer amigos.' }
+                },
+                // Week 11-15
+                {
+                    lunes: { physical: 'Circuitos de agilidad con conos. Juegos de "tocar y correr". Saltos de rana. Foco en la coordinación motora.', technical: 'Práctica de bateo con tee y lanzamientos suaves del entrenador. Rutinas de fildeo de roletazos simples.', mental: 'Aprender los nombres de las bases. Discusión sobre la importancia de la ayuda mutua.' },
+                    martes: { physical: 'Carreras de velocidad en grupos pequeños. Juegos de equilibrio en un pie. Ejercicios con "escalera" en el suelo.', technical: 'Lanzamiento de pelotas de béisbol con enfoque en la forma del brazo. Práctica de fildeo de elevados cortos.', mental: 'Aprender a gritar "¡Mía!" en el campo. Juego de roles para la comunicación.' },
+                    miercoles: { physical: 'Juegos de fuerza con peso corporal, como "caminata de cangrejo". Flexiones asistidas en la pared. Foco en la técnica.', technical: 'Práctica de bateo con lanzamientos variados del entrenador. Fildeo en diferentes posiciones de campo.', mental: 'Charla sobre la importancia de la concentración en el campo. Juego para identificar las reglas básicas.' },
+                    jueves: { physical: 'Juegos de resistencia, como "el cazador". Trote ligero y estiramientos suaves.', technical: 'Fildeo de roletazos rodantes, con la mano izquierda y derecha. Rutinas de fildeo de roletazos simples.', mental: 'Visualización de situaciones simples de juego. Practicar a felicitar a los compañeros.' },
+                    viernes: { physical: 'Velocidad y reacción con juegos. Práctica de saltos y movimientos rápidos. Arrastres con trineo ligero si está disponible.', technical: 'Bateo y fildeo de pelotas de goma. Repaso de las reglas del juego. Correr a las bases.', mental: 'Preparación mental para el partido del sábado, enfocándose en el esfuerzo y la diversión.' }
+                },
+                // Week 16-20
+                {
+                    lunes: { physical: 'Fuerza con el propio peso corporal, como el "oso camina" y los "cangrejos camina".', technical: 'Rutinas de bateo para contacto con pelotas de béisbol y pelotas de goma. Práctica de fildeo en diferentes bases.', mental: 'Ejercicios de concentración en la respiración. Discusión en grupo sobre cómo celebrar las jugadas de equipo.' },
+                    martes: { physical: 'Coordinación con "escalera mágica" en el suelo, ejercicios de equilibrio en un pie y rutinas con conos.', technical: 'Bateo con lanzamientos variados del entrenador. Práctica de fildeo con pelotas de diferentes pesos.', mental: 'Charla sobre la importancia de la confianza y el manejo de los errores en el campo.' },
+                    miercoles: { physical: 'Ejercicios de fuerza para el tren superior, como lanzamientos de balón medicinal ligero y flexiones en la pared.', technical: 'Rutinas de lanzamiento desde el montículo, trabajando en la mecánica básica y el control. Práctica de fildeo de roletazos rápidos.', mental: 'Juego de roles de comunicación en el campo, como decir "¡Me la quedo!" y "¡A primera!".' },
+                    jueves: { physical: 'Movilidad con juegos de estiramiento y yoga. Estiramientos de cadera y hombros para prevenir lesiones.', technical: 'Práctica de fildeo en diferentes bases. Simulacros de juego para trabajar la estrategia simple.', mental: 'Análisis de las jugadas del último juego en una sesión de discusión. Estrategia mental para el oponente.' },
+                    viernes: { physical: 'Velocidad y reacción: simulacros de carrera a bases, sprints desde diferentes posiciones de campo.', technical: 'Rutinas de bateo de contacto y potencia. Práctica de fildeo con pelotas de diferentes pesos y tamaños.', mental: 'Repaso de la estrategia del equipo y las jugadas más importantes. Mentalidad de victoria.' }
+                }
+            ];
+
+            // Updated data for 5-6 year old category (Pre-Moyote) with more variety
+            const dailyActivities_5_6 = [
+                {
+                    lunes: { physical: 'Circuitos de agilidad con conos. Juegos de "tocar y correr". Saltos de rana. Foco en la coordinación motora.', technical: 'Práctica de bateo con tee y lanzamientos suaves del entrenador. Rutinas de fildeo de roletazos simples.', mental: 'Aprender los nombres de las bases. Discusión sobre la importancia de la ayuda mutua.' },
+                    martes: { physical: 'Carreras de velocidad en grupos pequeños. Juegos de equilibrio en un pie. Ejercicios con "escalera" en el suelo.', technical: 'Lanzamiento de pelotas de béisbol con enfoque en la forma del brazo. Práctica de fildeo de elevados cortos.', mental: 'Aprender a gritar "¡Mía!" en el campo. Juego de roles para la comunicación.' },
+                    miercoles: { physical: 'Juegos de fuerza con peso corporal, como "caminata de cangrejo". Flexiones asistidas en la pared. Foco en la técnica.', technical: 'Práctica de bateo con lanzamientos variados del entrenador. Fildeo en diferentes posiciones de campo.', mental: 'Charla sobre la importancia de la concentración en el campo. Juego para identificar las reglas básicas.' },
+                    jueves: { physical: 'Juegos de resistencia, como "el cazador". Trote ligero y estiramientos suaves.', technical: 'Fildeo de roletazos rodantes, con la mano izquierda y derecha. Rutinas de fildeo de roletazos simples.', mental: 'Visualización de situaciones simples de juego. Practicar a felicitar a los compañeros.' },
+                    viernes: { physical: 'Velocidad y reacción con juegos. Práctica de saltos y movimientos rápidos. Arrastres con trineo ligero si está disponible.', technical: 'Bateo y fildeo de pelotas de goma. Repaso de las reglas del juego. Correr a las bases.', mental: 'Preparación mental para el partido del sábado, enfocándose en el esfuerzo y la diversión.' }
+                },
+                {
+                    lunes: { physical: 'Circuitos con escaleras de agilidad. Carreras cortas con giros. Saltos de caja bajos. Foco en el tren inferior.', technical: 'Práctica de bateo con tee y lanzamientos de mano. Fildeo de roletazos desde diferentes ángulos.', mental: 'Aprender a escuchar al entrenador. Discutir la importancia de la paciencia en el turno al bate.' },
+                    martes: { physical: 'Juegos de equilibrio en línea. Carreras de relevos con giros. Trote ligero y estiramientos.', technical: 'Lanzamiento de pelotas de béisbol con foco en la dirección. Práctica de fildeo de elevados cortos y largos.', mental: 'Aprender a dar y recibir instrucciones. Practicar la comunicación en el campo.' },
+                    miercoles: { physical: 'Ejercicios de fuerza para el core. Planchas asistidas. "El oso camina". Foco en la estabilización.', technical: 'Práctica de bateo con lanzamientos variados del entrenador. Fildeo de roletazos y elevados.', mental: 'Visualización de jugadas de bateo. Aprender a manejar la frustración.' },
+                    jueves: { physical: 'Juegos de "cazador" y "ratón" para la resistencia. Trote y estiramientos.', technical: 'Fildeo avanzado de roletazos y elevados. Rutinas de tiro a las bases.', mental: 'Analizar las jugadas del último juego. Estrategia mental simple.' },
+                    viernes: { physical: 'Velocidad y reacción con juegos. Arrancadas desde diferentes posiciones. Saltos de una pierna.', technical: 'Bateo y fildeo. Repaso de las reglas. Correr las bases.', mental: 'Preparación mental para el partido del sábado, enfocándose en el esfuerzo y la diversión.' }
+                },
+                {
+                    lunes: { physical: 'Juegos de agilidad con conos y cuerdas. Saltos con rodillas al pecho. Práctica de movimientos laterales.', technical: 'Bateo con tee. Fildeo de roletazos y elevados. Lanzamiento a la primera base.', mental: 'Repaso de las reglas básicas. Discusión sobre cómo animar a los compañeros.' },
+                    martes: { physical: 'Carreras de velocidad en grupos pequeños. Juegos de equilibrio en un pie. Ejercicios con "escalera" en el suelo.', technical: 'Lanzamiento con enfoque en la forma del brazo. Práctica de fildeo de elevados.', mental: 'Aprender a gritar "¡Mía!". Juego de roles para la comunicación.' },
+                    miercoles: { physical: 'Juegos de fuerza. Flexiones asistidas en la pared. Foco en la técnica.', technical: 'Práctica de bateo con lanzamientos variados. Fildeo en diferentes posiciones.', mental: 'Charla sobre la importancia de la concentración. Juego para identificar las reglas.' },
+                    jueves: { physical: 'Juegos de resistencia. Trote ligero y estiramientos.', technical: 'Fildeo de roletazos lentos y rápidos. Rutinas de fildeo en el campo.', mental: 'Visualización de situaciones simples. Practicar a felicitar a los compañeros.' },
+                    viernes: { physical: 'Velocidad y reacción con juegos. Práctica de saltos. Arrastres ligeros.', technical: 'Bateo y fildeo de pelotas. Repaso de las reglas. Correr las bases.', mental: 'Preparación mental para el partido del sábado.' }
+                },
+                {
+                    lunes: { physical: 'Juegos de agilidad con conos y vallas. Ejercicios de velocidad de reacción. Saltos con rodilla al pecho.', technical: 'Bateo de pelotas pequeñas para mejorar la visión. Fildeo de roletazos. Lanzamiento de precisión.', mental: 'Introducción a la estrategia. Charla sobre el trabajo en equipo.' },
+                    martes: { physical: 'Circuitos de velocidad y fuerza con el propio peso corporal. (Sentadillas, planchas, zancadas)', technical: 'Bateo de lanzamientos variados. Práctica de fildeo de elevados. Rutinas de tiros a las bases.', mental: 'Visualización de jugadas. Aprender a dar y seguir señales.' },
+                    miercoles: { physical: 'Fuerza de agarre y core. Lanzamientos de balón medicinal ligero. Flexiones asistidas.', technical: 'Rutinas de lanzamiento desde el montículo, enfocadas en la técnica. Fildeo de roletazos rápidos.', mental: 'Discusión en grupo sobre cómo celebrar los logros. Ejercicios de concentración.' },
+                    jueves: { physical: 'Resistencia: trote ligero y ejercicios de alta intensidad con intervalos cortos.', technical: 'Fildeo de roletazos lentos y rápidos. Rutinas de fildeo en el outfield. Simulacros de juego en el campo.', mental: 'Análisis de las jugadas del último juego. Estrategia mental para el oponente.' },
+                    viernes: { physical: 'Velocidad y explosividad: sprints cortos, saltos de longitud, saltos verticales.', technical: 'Práctica de bateo en vivo. Repaso de las jugadas. Práctica de fildeo con pelotas de diferentes pesos.', mental: 'Repaso de la estrategia. Visualización de la victoria en el juego.' }
+                },
+                {
+                    lunes: { physical: 'Juegos de agilidad con conos. Ejercicios de velocidad de reacción.', technical: 'Bateo con picheo de entrenador. Fildeo de roletazos. Lanzamiento de precisión.', mental: 'Introducción a la estrategia. Importancia del trabajo en equipo.' },
+                    martes: { physical: 'Circuitos de velocidad y fuerza con el propio peso corporal.', technical: 'Bateo de lanzamientos variados. Práctica de fildeo de elevados.', mental: 'Visualización de jugadas. Dar y seguir señales.' },
+                    miercoles: { physical: 'Fuerza de agarre y core. Lanzamientos de balón medicinal.', technical: 'Rutinas de lanzamiento. Fildeo de roletazos rápidos.', mental: 'Celebrar los logros. Ejercicios de concentración.' },
+                    jueves: { physical: 'Resistencia: trote ligero y ejercicios de alta intensidad.', technical: 'Simulacros de juego en el campo para fildeo y bateo.', mental: 'Análisis de jugadas. Estrategia mental.' },
+                    viernes: { physical: 'Velocidad y explosividad: sprints cortos. Saltos.', technical: 'Práctica de bateo en vivo. Repaso de las jugadas.', mental: 'Visualización de la victoria en el juego.' }
+                }
+            ];
+
+            // Updated data for 7-8 year old category (Moyote) with more variety
+            const dailyActivities_7_8 = [
+                {
+                    lunes: { physical: 'Ejercicios de agilidad con conos y vallas bajas. Ejercicios de velocidad de reacción. Saltos con rodilla al pecho.', technical: 'Bateo con picheo de entrenador. Rutinas de fildeo para roletazos. Lanzamiento de precisión a un objetivo.', mental: 'Introducción a la estrategia de juego. Charla sobre la importancia del trabajo en equipo.' },
+                    martes: { physical: 'Circuitos de velocidad y fuerza con el propio peso corporal. (Ejemplo: Sentadillas, planchas, zancadas)', technical: 'Bateo de lanzamientos variados del entrenador. Práctica de fildeo de elevados. Rutinas de tiros a las bases.', mental: 'Visualización de jugadas de fildeo y bateo. Aprender a dar y seguir señales.' },
+                    miercoles: { physical: 'Fuerza de agarre y core. Lanzamientos de balón medicinal ligero. Flexiones asistidas en la pared.', technical: 'Rutinas de lanzamiento desde el montículo, enfocadas en la técnica. Fildeo de roletazos rápidos.', mental: 'Discusión en grupo sobre cómo celebrar los logros de equipo. Ejercicios de concentración.' },
+                    jueves: { physical: 'Resistencia: trote ligero y ejercicios de alta intensidad con intervalos cortos.', technical: 'Simulacros de juego para trabajar la defensa y el fildeo. Práctica de fildeo en el outfield.', mental: 'Análisis de las jugadas del último juego. Estrategia mental para el oponente.' },
+                    viernes: { physical: 'Velocidad y explosividad: sprints cortos, saltos de longitud, saltos verticales.', technical: 'Práctica de bateo en vivo. Repaso de las jugadas más importantes. Práctica de fildeo con pelotas de diferentes pesos.', mental: 'Repaso de la estrategia del equipo. Visualización de la victoria en el juego del sábado.' }
+                },
+                {
+                    lunes: { physical: 'Fuerza de tren inferior: sentadillas con peso corporal, zancadas. Foco en la explosividad.', technical: 'Práctica de bateo con lanzamientos variados. Rutinas de fildeo. Lanzamiento de precisión a un objetivo.', mental: 'Aprender la importancia de la posición de fildeo. Discusión sobre cómo reaccionar a la bola.' },
+                    martes: { physical: 'Coordinación y agilidad: ejercicios con escaleras de agilidad. Carreras cortas con cambios de dirección.', technical: 'Bateo de pelotas de diferentes tamaños. Práctica de fildeo de roletazos lentos.', mental: 'Visualización de jugadas de fildeo y bateo. Aprender a dar y seguir señales.' },
+                    miercoles: { physical: 'Fuerza de core: planchas, "mountain climbers". Flexiones asistidas.', technical: 'Rutinas de lanzamiento desde el montículo, enfocadas en la técnica. Fildeo de roletazos rápidos.', mental: 'Discusión en grupo sobre cómo celebrar los logros de equipo. Ejercicios de concentración.' },
+                    jueves: { physical: 'Resistencia: trote ligero y ejercicios de alta intensidad con intervalos cortos.', technical: 'Simulacros de jugadas de defensa y ataque. Práctica de fildeo en el outfield.', mental: 'Análisis de las jugadas del último juego. Estrategia mental para el oponente.' },
+                    viernes: { physical: 'Velocidad y explosividad: sprints cortos, saltos de longitud, saltos verticales.', technical: 'Práctica de bateo en vivo. Repaso de las jugadas más importantes. Práctica de fildeo con pelotas de diferentes pesos.', mental: 'Repaso de la estrategia del equipo. Visualización de la victoria en el juego del sábado.' }
+                },
+                {
+                    lunes: { physical: 'Ejercicios pliométricos: saltos de caja bajos, saltos de rana. Foco en la potencia explosiva.', technical: 'Práctica de bateo con lanzamientos variados. Rutinas de fildeo. Lanzamiento de precisión a un objetivo.', mental: 'Introducción a la estrategia de juego. Charla sobre la importancia del trabajo en equipo.' },
+                    martes: { physical: 'Circuitos de velocidad y fuerza con el propio peso corporal. (Ejemplo: Sentadillas, planchas, zancadas)', technical: 'Bateo de lanzamientos variados del entrenador. Práctica de fildeo de elevados. Rutinas de tiros a las bases.', mental: 'Visualización de jugadas de fildeo y bateo. Aprender a dar y seguir señales.' },
+                    miercoles: { physical: 'Fuerza de agarre y core. Lanzamientos de balón medicinal ligero. Flexiones asistidas en la pared.', technical: 'Rutinas de lanzamiento desde el montículo, enfocadas en la técnica. Fildeo de roletazos rápidos.', mental: 'Discusión en grupo sobre cómo celebrar los logros de equipo. Ejercicios de concentración.' },
+                    jueves: { physical: 'Resistencia: trote ligero y ejercicios de alta intensidad con intervalos cortos.', technical: 'Simulacros de juego para trabajar la defensa. Práctica de fildeo en el outfield.', mental: 'Análisis de las jugadas del último juego. Estrategia mental para el oponente.' },
+                    viernes: { physical: 'Velocidad y explosividad: sprints cortos, saltos de longitud, saltos verticales.', technical: 'Práctica de bateo en vivo. Repaso de las jugadas más importantes. Práctica de fildeo con pelotas de diferentes pesos.', mental: 'Repaso de la estrategia del equipo. Visualización de la victoria en el juego del sábado.' }
+                },
+                {
+                    lunes: { physical: 'Ejercicios de agilidad y coordinación con escaleras. Saltos y movimientos laterales. Foco en la prevención de lesiones.', technical: 'Práctica de bateo con lanzamientos suaves del entrenador. Rutinas de fildeo de roletazos. Lanzamiento de precisión a un objetivo.', mental: 'Introducción a la estrategia de juego. Charla sobre la importancia del trabajo en equipo.' },
+                    martes: { physical: 'Circuitos de velocidad y fuerza con el propio peso corporal. (Ejemplo: Sentadillas, planchas, zancadas)', technical: 'Bateo de lanzamientos variados del entrenador. Práctica de fildeo de elevados. Rutinas de tiros a las bases.', mental: 'Visualización de jugadas de fildeo y bateo. Aprender a dar y seguir señales.' },
+                    miercoles: { physical: 'Fuerza de agarre y core. Lanzamientos de balón medicinal ligero. Flexiones asistidas en la pared.', technical: 'Rutinas de lanzamiento desde el montículo, enfocadas en la técnica. Fildeo de roletazos rápidos.', mental: 'Discusión en grupo sobre cómo celebrar los logros de equipo. Ejercicios de concentración.' },
+                    jueves: { physical: 'Resistencia: trote ligero y ejercicios de alta intensidad con intervalos cortos.', technical: 'Simulacros de jugadas de defensa y fildeo de flys. Práctica de fildeo en el outfield.', mental: 'Análisis de las jugadas del último juego. Estrategia mental para el oponente.' },
+                    viernes: { physical: 'Velocidad y explosividad: sprints cortos, saltos de longitud, saltos verticales.', technical: 'Práctica de bateo en vivo. Repaso de las jugadas más importantes. Práctica de fildeo con pelotas de diferentes pesos.', mental: 'Repaso de la estrategia del equipo. Visualización de la victoria en el juego del sábado.' }
+                },
+                {
+                    lunes: { physical: 'Ejercicios de agilidad con conos y vallas. Ejercicios de velocidad de reacción. Saltos con rodilla al pecho.', technical: 'Bateo con picheo de entrenador. Rutinas de fildeo para roletazos. Lanzamiento de precisión a un objetivo.', mental: 'Introducción a la estrategia de juego. Charla sobre la importancia del trabajo en equipo.' },
+                    martes: { physical: 'Circuitos de velocidad y fuerza con el propio peso corporal. (Ejemplo: Sentadillas, planchas, zancadas)', technical: 'Bateo de lanzamientos variados del entrenador. Práctica de fildeo de elevados. Rutinas de tiros a las bases.', mental: 'Visualización de jugadas de fildeo y bateo. Aprender a dar y seguir señales.' },
+                    miercoles: { physical: 'Fuerza de agarre y core. Lanzamientos de balón medicinal ligero. Flexiones asistidas en la pared.', technical: 'Rutinas de lanzamiento desde el montículo, enfocadas en la técnica. Fildeo de roletazos rápidos.', mental: 'Discusión en grupo sobre cómo celebrar los logros de equipo. Ejercicios de concentración.' },
+                    jueves: { physical: 'Resistencia: trote ligero y ejercicios de alta intensidad con intervalos cortos.', technical: 'Simulacros de juego en el campo para fildeo y bateo.', mental: 'Análisis de las jugadas del último juego. Estrategia mental para el oponente.' },
+                    viernes: { physical: 'Velocidad y explosividad: sprints cortos, saltos de longitud, saltos verticales.', technical: 'Práctica de bateo en vivo. Repaso de las jugadas más importantes. Práctica de fildeo con pelotas de diferentes pesos.', mental: 'Repaso de la estrategia del equipo. Visualización de la victoria en el juego del sábado.' }
+                }
+            ];
+
+            // Data for 9-10 year old category (Pewee)
+            const dailyActivities_9_10 = [
+                {
+                    lunes: { physical: 'Juegos de agilidad y coordinación con pelotas suaves, saltos de rana, carrera de conejos.', technical: 'Atrapar y lanzar con pelotas de tenis para mejorar la coordinación ojo-mano. Práctica de bateo con tee para la forma correcta.', mental: 'Divertidos ejercicios de visualización de jugadas de béisbol, como atrapar una pelota imposible.' },
+                    martes: { physical: 'Circuitos de velocidad y reacción, como carrera de relevos y ejercicios de "stop-go".', technical: 'Bateo de lanzamientos suaves de entrenador. Rutinas de fildeo de roletazos simples.', mental: 'Charla sobre la importancia de la concentración y el trabajo en equipo.' },
+                    miercoles: { physical: 'Juegos de fuerza con peso corporal, como flexiones de rodillas y sentadillas asistidas. Foco en la técnica.', technical: 'Práctica de lanzamiento de pelotas de béisbol con técnica de lanzamiento adecuada. Fildeo de elevados de manera segura.', mental: 'Juego de roles de comunicación en el campo, como gritar "¡Mía!" al fildeador.' },
+                    jueves: { physical: 'Resistencia a través de juegos, como "el cazador" o "la mancha". Trote ligero y estiramientos suaves.', technical: 'Repaso de las reglas básicas del béisbol. Práctica de "pisa y corre".', mental: 'Visualización de situaciones de juego simples. Práctica de decir "¡Buen trabajo!" a los compañeros.' },
+                    viernes: { physical: 'Velocidad y reacción con juegos de "luz roja, luz verde". Práctica de saltos y movimientos rápidos.', technical: 'Repaso de las señales básicas. Práctica de bateo y fildeo con bateadores y fildeadores en vivo.', mental: 'Preparación mental para el partido del sábado, enfocándose en la diversión y el esfuerzo.' }
+                },
+                {
+                    lunes: { physical: 'Fuerza con el propio peso corporal, como el "oso camina" y los "cangrejos camina".', technical: 'Rutinas de bateo para contacto con pelotas de béisbol y pelotas de goma. Práctica de fildeo en diferentes bases.', mental: 'Ejercicios de concentración en la respiración. Discusión en grupo sobre cómo celebrar las jugadas de equipo.' },
+                    martes: { physical: 'Coordinación con "escalera mágica" en el suelo, ejercicios de equilibrio en un pie y rutinas con conos.', technical: 'Bateo con lanzamientos variados del entrenador. Práctica de fildeo con pelotas de diferentes pesos.', mental: 'Charla sobre la importancia de la confianza y el manejo de los errores en el campo.' },
+                    miercoles: { physical: 'Ejercicios de fuerza para el tren superior, como lanzamientos de balón medicinal ligero y flexiones en la pared.', technical: 'Rutinas de lanzamiento desde el montículo, trabajando en la mecánica básica y el control. Práctica de fildeo de roletazos rápidos.', mental: 'Juego de roles de comunicación en el campo, como decir "¡Me la quedo!" y "¡A primera!".' },
+                    jueves: { physical: 'Movilidad con juegos de estiramiento y yoga. Estiramientos de cadera y hombros para prevenir lesiones.', technical: 'Práctica de fildeo en diferentes bases. Simulacros de juego para trabajar la estrategia simple.', mental: 'Análisis de las jugadas del último juego en una sesión de discusión. Estrategia mental para el oponente.' },
+                    viernes: { physical: 'Velocidad y reacción: simulacros de carrera a bases, sprints desde diferentes posiciones de campo.', technical: 'Rutinas de bateo de contacto y potencia. Práctica de fildeo con pelotas de diferentes pesos y tamaños.', mental: 'Repaso de la estrategia del equipo y las jugadas más importantes. Mentalidad de victoria.' }
+                },
+                {
+                    lunes: { physical: 'Fuerza isométrica: "estatuas" estáticas de un minuto en diferentes posiciones. Foco en el equilibrio y la resistencia.', technical: 'Práctica de tiro a bases con precisión. Simulacros de juego para trabajar el "pisa y corre" y los robos de bases.', mental: 'Ejercicios de toma de decisiones rápidas, como reaccionar a la bola en juego. Práctica de comunicación efectiva en el campo.' },
+                    martes: { physical: 'Agilidad y velocidad de reacción: rutinas con pelotas de tenis rebotando en la pared. Juegos de respuesta a señales auditivas.', technical: 'Práctica de fildeo de roletazos en diferentes tipos de terreno. Práctica de bateo en vivo con lanzadores.', mental: 'Análisis de los errores de los jugadores en el juego. Práctica de concentración en el juego.' },
+                    miercoles: { physical: 'Fuerza de agarre: trabajo con pelotas de goma y pinzas de mano.', technical: 'Rutinas de lanzamiento con diferentes velocidades. Práctica de fildeo en el outfield, trabajando en la comunicación y los tiros de larga distancia.', mental: 'Repaso de la estrategia del juego. Ejercicios de concentración en el juego.' },
+                    jueves: { physical: 'Juegos de velocidad y coordinación: la "mancha" o "stop-go". Carreras de relevos con ejercicios de agilidad.', technical: 'Rutinas de agilidad con música. Práctica de bateo con picheo de mánager.', mental: 'Ejercicios de concentración y enfoque. Práctica de comunicación en el campo.' },
+                    viernes: { physical: 'Potencia explosiva: saltos de una pierna, sprints con paradas y arranques repentinos.', technical: 'Práctica de lanzamiento y bateo. Simulacros de partido.', mental: 'Visualización de la victoria en el juego del sábado. Ejercicios de concentración.' }
+                },
+                {
+                    lunes: { physical: 'Fuerza en circuitos: combina ejercicios de tren inferior y superior en circuitos de alta intensidad. (Ejemplo: Sentadillas, press de pecho, zancadas, remo)', technical: 'Simulacros de juego en el campo completo. Práctica de bateo con pelotas de plástico.', mental: 'Sesión de análisis de la técnica de lanzamiento. Discusión en grupo sobre la estrategia.' },
+                    martes: { physical: 'Rutinas de agilidad avanzados: ejercicios con múltiples cambios de dirección, vallas bajas y conos. (Ejemplo: T-Drill, Box drill)', technical: 'Rutinas de agilidad con escaleras. Práctica de tiros a las bases desde el outfield.', mental: 'Técnicas de enfoque para bateadores en el plato. Revisión de las jugadas de partido.' },
+                    miercoles: { physical: 'Pliometría y potencia: saltos profundos, lanzamientos de balón medicinal y flexiones con palmada. Foco en la generación de fuerza rápida.', technical: 'Práctica de lanzamiento de pelotas de béisbol con diferentes pesos para mejorar la fuerza del brazo. Rutinas de bateo con elástico de resistencia.', mental: 'Simulaciones de juego mental para tomar decisiones en fracciones de segundo. Revisión de los objetivos semanales.' },
+                    jueves: { physical: 'Recuperación activa: caminata, trote muy ligero y estiramientos prolongados.', technical: 'Práctica de fildeo en el outfield. Bateo de contacto con lanzamientos de diferentes velocidades.', mental: 'Visualización de las jugadas más importantes del último juego. Discusión en grupo sobre el plan de juego del sábado.' },
+                    viernes: { physical: 'Simulacros de juego: trabajo de velocidad y reacción en situaciones de partido. (Ejemplo: Carrera a primera, pisa y corre)', technical: 'Repaso de las jugadas más importantes. Práctica de fildeo con pelotas de diferentes tamaños.', mental: 'Visualización de la victoria en el juego del sábado. Mentalidad de victoria.' }
+                },
+                {
+                    lunes: { physical: 'Fuerza de core y estabilidad: planchas laterales, levantamiento de piernas y puentes de glúteo. Foco en la prevención de lesiones.', technical: 'Fildeo de roletazos lentos y rápidos. Bateo de línea y práctica de toques de bola.', mental: 'Rutinas de visualización para situaciones de alta presión. Ejercicios de confianza en uno mismo.' },
+                    martes: { physical: 'Agilidad con resistencia: sprints con paracaídas, arrastres con trineo o bandas.', technical: 'Bateo de pelotas pequeñas para mejorar la visión y el contacto. Práctica de fildeo de pelotas de goma.', mental: 'Práctica de la comunicación y el liderazgo en el campo. Análisis de los lanzadores de forma presencial.' },
+                    miercoles: { physical: 'Fuerza de hombros y brazo: rotaciones externas con banda, press de hombro con mancuernas ligeras. Foco en la salud del brazo lanzador.', technical: 'Práctica de tiro con una pared. Bateo de contacto con pelotas de béisbol de madera.', mental: 'Visualización de jugadas de fildeo complejas. Ejercicios de concentración en la respiración.' },
+                    jueves: { physical: 'Movilidad y prevención de lesiones: estiramientos con foam roller y estiramientos estáticos.', technical: 'Práctica de bateo con pelotas de plástico. Rutinas de agilidad con música.', mental: 'Ejercicios de enfoque y relajación. Análisis en persona de los oponentes.' },
+                    viernes: { physical: 'Rutinas de velocidad pura: sprints de 10, 20 y 30 metros. Foco en el máximo rendimiento.', technical: 'Práctica de bateo de contacto con pelotas de diferentes pesos y tamaños. Repaso de la estrategia del equipo y las jugadas más importantes.', mental: 'Visualización de la victoria en el juego del sábado. Ejercicios de concentración y relajación.' }
+                }
+            ];
+
+            // Data for 11-12 year old category (Pequeña)
+            const dailyActivities_11_12 = [
+                {
+                    lunes: { physical: 'Ejercicios de tren inferior: sentadillas con peso corporal, zancadas, saltos de caja y gemelos.', technical: 'Bateo con pelotas de diferentes tamaños para mejorar el contacto. Práctica de fildeo con pelotas de tenis para mejorar reflejos.', mental: 'Visualización de jugadas perfectas. Establecer un objetivo de concentración para la semana.' },
+                    martes: { physical: 'Velocidad y agilidad: sprints cortos con cambios de dirección, rutinas de agilidad con conos y vallas.', technical: 'Bateo de lanzamientos variados (curva, recta, cambio). Rutinas de fildeo para elevados en diferentes direcciones.', mental: 'Analizar las debilidades del equipo contrario con la observación directa. Práctica de rutinas mentales pre-juego.' },
+                    miercoles: { physical: 'Potencia de tren superior: flexiones pliométricas, dominadas asistidas, lanzamientos de balón medicinal con rotación.', technical: 'Rutinas de lanzamiento desde el montículo, trabajando en la mecánica y el control. Práctica de fildeo de roletazos lentos.', mental: 'Rutinas mentales para el éxito. Ejercicios para manejar el estrés del juego.' },
+                    jueves: { physical: 'Resistencia: trote ligero, ejercicios de alta intensidad con intervalos de descanso cortos.', technical: 'Bateo de pelotas rápidas y lanzamientos de velocidad. Rutinas de agilidad con conos y vallas para mejorar los reflejos.', mental: 'Visualización de situaciones de juego. Práctica de comunicación en el campo.' },
+                    viernes: { physical: 'Explosividad: saltos de longitud, saltos verticales y rutinas de reacción rápida.', technical: 'Repaso de las señales del equipo y las jugadas más importantes. Práctica de fildeo de rutina y de emergencia.', mental: 'Preparación mental para el juego del sábado. Visualización de la victoria.' }
+                },
+                {
+                    lunes: { physical: 'Fuerza funcional: peso muerto con mancuernas ligeras, remo con barra y planchas con peso. Énfasis en la estabilización del core.', technical: 'Rutinas de bateo en jaula para contacto y potencia. Práctica de fildeo bajo presión, como con la música alta.', mental: 'Respiración controlada para calmarse en momentos de presión. Analizar los swings de los jugadores en persona para identificar errores.' },
+                    martes: { physical: 'Coordinación y agilidad: escalera de agilidad, ejercicios de equilibrio y rutinas con bandas de resistencia.', technical: 'Práctica de bateo para contacto y poder con pelotas de diferentes pesos. Rutinas de fildeo para fildeo y lanzamientos de relevo.', mental: 'Discusión en grupo sobre la estrategia del equipo. Ejercicios de confianza para los jugadores.' },
+                    miercoles: { physical: 'Fuerza de lanzamiento: rotación de tronco con cable, lanzamientos de balón medicinal con rotación y flexiones pliométricas.', technical: 'Bateo de pelotas pequeñas para mejorar la visión y el contacto. Práctica de fildeo en diferentes bases.', mental: 'Entrenamiento de confianza y el manejo del fracaso. Práctica de comunicación efectiva en el campo.' },
+                    jueves: { physical: 'Movilidad y flexibilidad: estiramientos dinámicos, yoga para atletas y movilidad de cadera y hombros.', technical: 'Práctica de fildeo en diferentes bases. Simulacros de juego para trabajar la estrategia y el trabajo en equipo.', mental: 'Análisis de los errores del juego anterior en una sesión de discusión. Estrategia mental para el oponente.' },
+                    viernes: { physical: 'Velocidad y reacción: simulacros de carrera a bases, sprints desde diferentes posiciones de campo.', technical: 'Rutinas de bateo de contacto y potencia. Práctica de fildeo con pelotas de diferentes pesos y tamaños.', mental: 'Repaso de la estrategia del equipo y las jugadas más importantes. Mentalidad de victoria.' }
+                },
+                {
+                    lunes: { physical: 'Entrenamiento de fuerza isométrica: planchas estáticas, sentadillas en la pared. Foco en la resistencia muscular.', technical: 'Práctica de tiro a bases con precisión. Simulacros de juego para trabajar el pisa y corre.', mental: 'Ejercicios de toma de decisiones rápidas, como reaccionar a la bola en juego. Práctica de comunicación efectiva en el campo.' },
+                    martes: { physical: 'Agilidad y velocidad de reacción: rutinas con pelotas de tenis rebotando, ejercicios de respuesta a señales auditivas.', technical: 'Práctica de fildeo de rodadas en diferentes tipos de terreno. Práctica de bateo en vivo con lanzadores.', mental: 'Análisis de los errores de los jugadores en el juego. Práctica de concentración en el juego.' },
+                    miercoles: { physical: 'Fuerza de agarre: trabajo con pesas rusas, pinzas y ejercicios de antebrazo.', technical: 'Rutinas de lanzamiento con diferentes velocidades. Práctica de fildeo en el outfield, trabajando en la comunicación y los tiros de larga distancia.', mental: 'Repaso de la estrategia del juego. Ejercicios de concentración en el juego.' },
+                    jueves: { physical: 'Juegos de velocidad y coordinación: la "mancha" o "stop-go". Carreras de relevos con ejercicios de agilidad.', technical: 'Rutinas de agilidad con música. Práctica de bateo con picheo de mánager.', mental: 'Ejercicios de concentración y enfoque. Práctica de comunicación en el campo.' },
+                    viernes: { physical: 'Potencia explosiva: saltos de una pierna, sprints con paradas y arranques repentinos.', technical: 'Práctica de lanzamiento y bateo. Simulacros de partido.', mental: 'Visualización de la victoria en el juego del sábado. Ejercicios de concentración.' }
+                },
+                {
+                    lunes: { physical: 'Fuerza en circuitos: combina ejercicios de tren inferior y superior en circuitos de alta intensidad. (Ejemplo: Sentadillas, press de pecho, zancadas, remo)', technical: 'Simulacros de juego en el campo completo. Práctica de bateo con pelotas de plástico.', mental: 'Sesión de análisis de la técnica de lanzamiento. Discusión en grupo sobre la estrategia.' },
+                    martes: { physical: 'Rutinas de agilidad avanzados: ejercicios con múltiples cambios de dirección, vallas bajas y conos. (Ejemplo: T-Drill, Box drill)', technical: 'Rutinas de agilidad con escaleras. Práctica de tiros a las bases desde el outfield.', mental: 'Técnicas de enfoque para bateadores en el plato. Revisión de las jugadas de partido.' },
+                    miercoles: { physical: 'Pliometría y potencia: saltos profundos, lanzamientos de balón medicinal y flexiones con palmada. Foco en la generación de fuerza rápida.', technical: 'Práctica de lanzamiento de pelotas de béisbol con diferentes pesos para mejorar la fuerza del brazo. Rutinas de bateo con elástico de resistencia.', mental: 'Simulaciones de juego mental para tomar decisiones en fracciones de segundo. Revisión de los objetivos semanales.' },
+                    jueves: { physical: 'Recuperación activa: caminata, trote muy ligero y estiramientos prolongados.', technical: 'Práctica de fildeo en el outfield. Bateo de contacto con lanzamientos de diferentes velocidades.', mental: 'Visualización de las jugadas más importantes del último juego. Discusión en grupo sobre el plan de juego del sábado.' },
+                    viernes: { physical: 'Simulacros de juego: trabajo de velocidad y reacción en situaciones de partido. (Ejemplo: Carrera a primera, pisa y corre)', technical: 'Repaso de las jugadas más importantes. Práctica de fildeo con pelotas de diferentes tamaños.', mental: 'Visualización de la victoria en el juego del sábado. Mentalidad de victoria.' }
+                },
+                {
+                    lunes: { physical: 'Fuerza de core y estabilidad: planchas laterales, levantamiento de piernas y puentes de glúteo. Foco en la prevención de lesiones.', technical: 'Fildeo de roletazos lentos y rápidos. Bateo de línea y práctica de toques de bola.', mental: 'Rutinas de visualización para situaciones de alta presión. Ejercicios de confianza en uno mismo.' },
+                    martes: { physical: 'Agilidad con resistencia: sprints con paracaídas, arrastres con trineo o bandas.', technical: 'Bateo de pelotas pequeñas para mejorar la visión y el contacto. Práctica de fildeo de pelotas de goma.', mental: 'Práctica de la comunicación y el liderazgo en el campo. Análisis de los lanzadores de forma presencial.' },
+                    miercoles: { physical: 'Fuerza de hombros y brazo: rotaciones externas con banda, press de hombro con mancuernas ligeras. Foco en la salud del brazo lanzador.', technical: 'Práctica de tiro con una pared. Bateo de contacto con pelotas de béisbol de madera.', mental: 'Visualización de jugadas de fildeo complejas. Ejercicios de concentración en la respiración.' },
+                    jueves: { physical: 'Movilidad y prevención de lesiones: estiramientos con foam roller y estiramientos estáticos.', technical: 'Práctica de bateo con pelotas de plástico. Rutinas de agilidad con música.', mental: 'Ejercicios de enfoque y relajación. Análisis en persona de los oponentes.' },
+                    viernes: { physical: 'Rutinas de velocidad pura: sprints de 10, 20 y 30 metros. Foco en el máximo rendimiento.', technical: 'Práctica de bateo de contacto con pelotas de diferentes pesos y tamaños. Repaso de la estrategia del equipo y las jugadas más importantes.', mental: 'Visualización de la victoria en el juego del sábado. Ejercicios de concentración y relajación.' }
+                }
+            ];
+
+            const peakPerformanceActivities_3_4 = {
+                lunes: { physical: 'Recuperación activa y juegos suaves. Caminatas y estiramientos para mantener la flexibilidad. Foco en la prevención de lesiones.', technical: 'Repeticiones de bateo y fildeo con intensidad moderada. Revisión de las reglas del torneo de béisbol de Williamsport.', mental: 'Repaso de las señales y estrategias ofensivas y defensivas.' },
+                martes: { physical: 'Movilidad y flexibilidad: estiramientos estáticos y rodillo de espuma.', technical: 'Práctica de bateo de contacto (no de poder) con picheo de mánager. Rutinas de fildeo de rutina.', mental: 'Ejercicios de concentración y respiración. Visualización del éxito en el torneo.' },
+                miercoles: { physical: 'Activación muscular: saltos suaves y sprints cortos al 50% de intensidad. Foco en la explosividad sin fatiga.', technical: 'Simulacros de juego cortos, enfocados en situaciones de alta presión (bases llenas, dos outs).', mental: 'Discusión en grupo sobre el plan de juego. Ejercicios para manejar el nerviosismo pre-torneo.' },
+                jueves: { physical: 'Descanso o recuperación muy ligera: caminata suave o estiramientos.', technical: 'Repaso final de las jugadas. Bateo y fildeo muy ligeros para mantener el tacto.', mental: 'Meditación y enfoque en el juego. Repaso mental de la estrategia personal.' },
+                viernes: { physical: 'Descanso total. No hay entrenamiento físico.', technical: 'Descanso total. No hay entrenamiento técnico.', mental: 'Preparación mental individual. Visualización de la victoria en el campeonato.' }
+            };
+
+            const peakPerformanceActivities_5_6 = {
+                lunes: { physical: 'Recuperación activa: caminata y estiramientos suaves.', technical: 'Rutinas de agilidad sin impacto y pisa y corre. Repeticiones de fildeo y bateo con intensidad moderada. Capacitación en reglas del torneo de béisbol de Williamsport.', mental: 'Repaso de las señales y estrategias ofensivas y defensivas.' },
+                martes: { physical: 'Movilidad y flexibilidad: estiramientos estáticos y rodillo de espuma.', technical: 'Práctica de bateo de contacto (no de poder) con picheo de mánager. Rutinas de fildeo de rutina.', mental: 'Ejercicios de concentración y respiración. Visualización del éxito en el torneo.' },
+                miercoles: { physical: 'Activación muscular: saltos suaves y sprints cortos al 50% de intensidad. Foco en la explosividad sin fatiga.', technical: 'Simulacros de juego cortos, enfocados en situaciones de alta presión (bases llenas, dos outs).', mental: 'Discusión en grupo sobre el plan de juego. Ejercicios para manejar el nerviosismo pre-torneo.' },
+                jueves: { physical: 'Descanso o recuperación muy ligera: caminata suave o estiramientos.', technical: 'Repaso final de las jugadas. Bateo y fildeo muy ligeros para mantener el tacto.', mental: 'Meditación y enfoque en el juego. Repaso mental de la estrategia personal.' },
+                viernes: { physical: 'Descanso total. No hay entrenamiento físico.', technical: 'Descanso total. No hay entrenamiento técnico.', mental: 'Preparación mental individual. Visualización de la victoria en el campeonato.' }
+            };
+
+            const peakPerformanceActivities_7_8 = {
+                lunes: { physical: 'Recuperación activa: caminata, trote muy ligero y estiramientos suaves.', technical: 'Rutinas de agilidad sin impacto y pisa y corre. Repeticiones de fildeo y bateo con intensidad moderada. Capacitación en reglas del torneo de béisbol de Williamsport.', mental: 'Repaso de las señales y estrategias ofensivas y defensivas.' },
+                martes: { physical: 'Movilidad y flexibilidad: yoga para atletas, estiramientos estáticos prolongados y rodillo de espuma.', technical: 'Práctica de bateo de contacto (no de poder) con picheo de mánager. Rutinas de fildeo de rutina.', mental: 'Ejercicios de concentración y respiración. Visualización del éxito en el torneo.' },
+                miercoles: { physical: 'Activación muscular: saltos suaves y sprints cortos al 50-70% de intensidad. Foco en la explosividad sin fatiga.', technical: 'Simulacros de juego cortos, enfocados en situaciones de alta presión (bases llenas, dos outs).', mental: 'Discusión en grupo sobre el plan de juego. Ejercicios para manejar el nerviosismo pre-torneo.' },
+                jueves: { physical: 'Descanso o recuperación muy ligera: caminata suave o estiramientos.', technical: 'Repaso final de las jugadas. Bateo y fildeo muy ligeros para mantener el tacto.', mental: 'Meditación y enfoque en el juego. Repaso mental de la estrategia personal.' },
+                viernes: { physical: 'Descanso total. No hay entrenamiento físico.', technical: 'Descanso total. No hay entrenamiento técnico.', mental: 'Preparación mental individual. Visualización de la victoria en el campeonato.' }
+            };
+
+            const peakPerformanceActivities_9_10 = {
+                lunes: { physical: 'Recuperación activa: caminata y estiramientos suaves.', technical: 'Rutinas de agilidad sin impacto y pisa y corre. Repeticiones de fildeo y bateo con intensidad moderada. Capacitación en reglas del torneo de béisbol de Williamsport.', mental: 'Repaso de las señales y estrategias ofensivas y defensivas.' },
+                martes: { physical: 'Movilidad y flexibilidad: estiramientos estáticos y rodillo de espuma.', technical: 'Práctica de bateo de contacto (no de poder) con picheo de mánager. Rutinas de fildeo de rutina.', mental: 'Ejercicios de concentración y respiración. Visualización del éxito en el torneo.' },
+                miercoles: { physical: 'Activación muscular: saltos suaves y sprints cortos al 50% de intensidad. Foco en la explosividad sin fatiga.', technical: 'Simulacros de juego cortos, enfocados en situaciones de alta presión (bases llenas, dos outs).', mental: 'Discusión en grupo sobre el plan de juego. Ejercicios para manejar el nerviosismo pre-torneo.' },
+                jueves: { physical: 'Descanso o recuperación muy ligera: caminata suave o estiramientos.', technical: 'Repaso final de las jugadas. Bateo y fildeo muy ligeros para mantener el tacto.', mental: 'Meditación y enfoque en el juego. Repaso mental de la estrategia personal.' },
+                viernes: { physical: 'Descanso total. No hay entrenamiento físico.', technical: 'Descanso total. No hay entrenamiento técnico.', mental: 'Preparación mental individual. Visualización de la victoria en el campeonato.' }
+            };
+
+            const peakPerformanceActivities_11_12 = {
+                lunes: { physical: 'Recuperación activa: caminata, trote muy ligero y estiramientos suaves.', technical: 'Rutinas de agilidad sin impacto y pisa y corre. Repeticiones de fildeo y bateo con intensidad moderada. Capacitación en reglas del torneo de béisbol de Williamsport.', mental: 'Repaso de las señales y estrategias ofensivas y defensivas.' },
+                martes: { physical: 'Movilidad y flexibilidad: yoga para atletas, estiramientos estáticos prolongados y rodillo de espuma.', technical: 'Práctica de bateo de contacto (no de poder) con picheo de mánager. Rutinas de fildeo de rutina.', mental: 'Ejercicios de concentración y respiración. Visualización del éxito en el torneo.' },
+                miercoles: { physical: 'Activación muscular: saltos suaves y sprints cortos al 50-70% de intensidad. Foco en la explosividad sin fatiga.', technical: 'Simulacros de juego cortos, enfocados en situaciones de alta presión (bases llenas, dos outs).', mental: 'Discusión en grupo sobre el plan de juego. Ejercicios para manejar el nerviosismo pre-torneo.' },
+                jueves: { physical: 'Descanso o recuperación muy ligera: caminata suave o estiramientos.', technical: 'Repaso final de las jugadas. Bateo y fildeo muy ligeros para mantener el tacto.', mental: 'Meditación y enfoque en el juego. Repaso mental de la estrategia personal.' },
+                viernes: { physical: 'Descanso total. No hay entrenamiento físico.', technical: 'Descanso total. No hay entrenamiento técnico.', mental: 'Preparación mental individual. Visualización de la victoria en el campeonato.' }
+            };
+            
+            const createWeeklyPlan = (week) => {
+                const phase = phaseTitle(week);
+                const rotationIndex = (week - 1) % 5;
+
+                // Plans for 3-4 year olds
+                let weekActivities_3_4 = (phase === 'Pico de Rendimiento') ? peakPerformanceActivities_3_4 : dailyActivities_3_4[rotationIndex % dailyActivities_3_4.length];
+                planData['3-4'] = planData['3-4'] || {};
+                planData['3-4'][week] = {
+                    lunes: { title: `Lunes - ${phase}`, activity: "Juegos y diversión", details: `<p><strong>Calentamiento:</strong> Estiramientos dinámicos muy simples (10 min).</p><p><strong>Físico:</strong> ${weekActivities_3_4.lunes.physical} (20 min)</p><p><strong>Técnico:</strong> ${weekActivities_3_4.lunes.technical} (20 min)</p><p><strong>Mental:</strong> ${weekActivities_3_4.lunes.mental} (10 min)</p><p><strong>Enfriamiento:</strong> Estiramientos suaves (10 min).</p>` },
+                    martes: { title: `Martes - ${phase}`, activity: "Coordinación y amistad", details: `<p><strong>Calentamiento:</strong> Caminar y trotar en el lugar (10 min).</p><p><strong>Físico:</strong> ${weekActivities_3_4.martes.physical} (20 min)</p><p><strong>Técnico:</strong> ${weekActivities_3_4.martes.technical} (20 min)</p><p><strong>Mental:</strong> ${weekActivities_3_4.martes.mental} (10 min)</p><p><strong>Enfriamiento:</strong> Estiramientos suaves (10 min).</p>` },
+                    miercoles: { title: `Miércoles - ${phase}`, activity: "Habilidades básicas y concentración", details: `<p><strong>Calentamiento:</strong> Juegos de imitación de animales (10 min).</p><p><strong>Físico:</strong> ${weekActivities_3_4.miercoles.physical} (20 min)</p><p><strong>Técnico:</strong> ${weekActivities_3_4.miercoles.technical} (20 min)</p><p><strong>Mental:</strong> ${weekActivities_3_4.miercoles.mental} (10 min)</p><p><strong>Enfriamiento:</strong> Estiramientos suaves (10 min).</p>` },
+                    jueves: { title: `Jueves - ${phase}`, activity: "Reacción y obediencia", details: `<p><strong>Calentamiento:</strong> Carrera ligera y movimientos de brazos (10 min).</p><p><strong>Físico:</strong> ${weekActivities_3_4.jueves.physical} (20 min)</p><p><strong>Técnico:</strong> ${weekActivities_3_4.jueves.technical} (20 min)</p><p><strong>Mental:</strong> ${weekActivities_3_4.jueves.mental} (10 min)</p><p><strong>Enfriamiento:</strong> Estiramientos suaves (10 min).</p>` },
+                    viernes: { title: `Viernes - ${phase}`, activity: "Juego libre y preparación para el partido", details: `<p><strong>Calentamiento:</strong> Juegos de calentamiento divertidos (10 min).</p><p><strong>Físico:</strong> ${weekActivities_3_4.viernes.physical} (20 min)</p><p><strong>Técnico:</strong> ${weekActivities_3_4.viernes.technical} (20 min)</p><p><strong>Mental:</strong> ${weekActivities_3_4.viernes.mental} (10 min)</p><p><strong>Enfriamiento:</strong> Estiramientos suaves (10 min).</p>` },
+                    sabado: { title: `Sábado - ${phase}`, activity: "Día de Partido", details: `<p><strong>Juego:</strong> Aplicar las habilidades entrenadas en un juego real. Calentamiento, estiramientos dinámicos y enfriamiento son esenciales.</p>` },
+                    domingo: { title: `Domingo - ${phase}`, activity: "Día de Descanso", details: `<p><strong>Descanso:</strong> Es un día de recuperación completa para que el cuerpo y la mente se regeneren. Evita actividades extenuantes.</p>` }
+                };
+
+                // Plans for 5-6 year olds
+                let weekActivities_5_6 = (phase === 'Pico de Rendimiento') ? peakPerformanceActivities_5_6 : dailyActivities_5_6[rotationIndex];
+                planData['5-6'] = planData['5-6'] || {};
+                planData['5-6'][week] = {
+                    lunes: { title: `Lunes - ${phase}`, activity: "Agilidad y técnica básica", details: `<p><strong>Calentamiento:</strong> Estiramientos dinámicos y movilidad articular (10 min).</p><p><strong>Físico:</strong> ${weekActivities_5_6.lunes.physical} (30 min)</p><p><strong>Técnico:</strong> ${weekActivities_5_6.lunes.technical} (30 min)</p><p><strong>Mental:</strong> ${weekActivities_5_6.lunes.mental} (10 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos (10 min).</p>` },
+                    martes: { title: `Martes - ${phase}`, activity: "Velocidad y comunicación", details: `<p><strong>Calentamiento:</strong> Calentamiento con ejercicios cardiovasculares ligeros (10 min).</p><p><strong>Físico:</strong> ${weekActivities_5_6.martes.physical} (30 min)</p><p><strong>Técnico:</strong> ${weekActivities_5_6.martes.technical} (30 min)</p><p><strong>Mental:</strong> ${weekActivities_5_6.martes.mental} (10 min)</p><p><strong>Enfriamiento:</strong> Estiramientos de piernas y cadera (10 min).</p>` },
+                    miercoles: { title: `Miércoles - ${phase}`, activity: "Fuerza y lanzamiento", details: `<p><strong>Calentamiento:</strong> Movilidad de hombros y estiramientos dinámicos (10 min).</p><p><strong>Físico:</strong> ${weekActivities_5_6.miercoles.physical} (30 min)</p><p><strong>Técnico:</strong> ${weekActivities_5_6.miercoles.technical} (30 min)</p><p><strong>Mental:</strong> ${weekActivities_5_6.miercoles.mental} (10 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos de hombros y espalda (10 min).</p>` },
+                    jueves: { title: `Jueves - ${phase}`, activity: "Habilidades y estrategia simple", details: `<p><strong>Calentamiento:</strong> Ejercicios de activación y movilidad específicos (10 min).</p><p><strong>Físico:</strong> ${weekActivities_5_6.jueves.physical} (30 min)</p><p><strong>Técnico:</strong> ${weekActivities_5_6.jueves.technical} (30 min)</p><p><strong>Mental:</strong> ${weekActivities_5_6.jueves.mental} (10 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos para prevenir lesiones (10 min).</p>` },
+                    viernes: { title: `Viernes - ${phase}`, activity: "Habilidades y estrategia", details: `<p><strong>Calentamiento:</strong> Activación muscular y rutinas de agilidad (10 min).</p><p><strong>Físico:</strong> ${weekActivities_5_6.viernes.physical} (30 min)</p><p><strong>Técnico:</strong> ${weekActivities_5_6.viernes.technical} (30 min)</p><p><strong>Mental:</strong> ${weekActivities_5_6.viernes.mental} (10 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos y rodillo de espuma (10 min).</p>` },
+                    sabado: { title: `Sábado - ${phase}`, activity: "Día de Partido", details: `<p><strong>Juego:</strong> Aplicar las habilidades entrenadas en un juego real. Calentamiento, estiramientos dinámicos y enfriamiento son esenciales.</p>` },
+                    domingo: { title: `Domingo - ${phase}`, activity: "Día de Descanso", details: `<p><strong>Descanso:</strong> Es un día de recuperación completa para que el cuerpo y la mente se regeneren. Evita actividades extenuantes.</p>` }
+                };
+
+                // Plans for 7-8 year olds
+                let weekActivities_7_8 = (phase === 'Pico de Rendimiento') ? peakPerformanceActivities_7_8 : dailyActivities_7_8[rotationIndex];
+                planData['7-8'] = planData['7-8'] || {};
+                planData['7-8'][week] = {
+                    lunes: { title: `Lunes - ${phase}`, activity: "Agilidad y técnica", details: `<p><strong>Calentamiento:</strong> Estiramientos dinámicos y movilidad articular (15 min).</p><p><strong>Físico:</strong> ${weekActivities_7_8.lunes.physical} (40 min)</p><p><strong>Técnico:</strong> ${weekActivities_7_8.lunes.technical} (40 min)</p><p><strong>Mental:</strong> ${weekActivities_7_8.lunes.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos y rodillo de espuma (15 min).</p>` },
+                    martes: { title: `Martes - ${phase}`, activity: "Velocidad y bateo", details: `<p><strong>Calentamiento:</strong> Calentamiento con ejercicios cardiovasculares ligeros (15 min).</p><p><strong>Físico:</strong> ${weekActivities_7_8.martes.physical} (40 min)</p><p><strong>Técnico:</strong> ${weekActivities_7_8.martes.technical} (40 min)</p><p><strong>Mental:</strong> ${weekActivities_7_8.martes.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos de piernas y cadera (15 min).</p>` },
+                    miercoles: { title: `Miércoles - ${phase}`, activity: "Fuerza y lanzamiento", details: `<p><strong>Calentamiento:</strong> Movilidad de hombros y estiramientos dinámicos (15 min).</p><p><strong>Físico:</strong> ${weekActivities_7_8.miercoles.physical} (40 min)</p><p><strong>Técnico:</strong> ${weekActivities_7_8.miercoles.technical} (40 min)</p><p><strong>Mental:</strong> ${weekActivities_7_8.miercoles.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos de hombros y espalda (15 min).</p>` },
+                    jueves: { title: `Jueves - ${phase}`, activity: "Entrenamiento Especializado", details: `<p><strong>Calentamiento:</strong> Ejercicios de activación y movilidad específicos de la posición. (15 min)</p><p><strong>Físico:</strong> ${weekActivities_7_8.jueves.physical} (40 min)</p><p><strong>Técnico:</strong> ${weekActivities_7_8.jueves.technical} (40 min)</p><p><strong>Mental:</strong> ${weekActivities_7_8.jueves.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos para prevenir lesiones. (15 min)</p>` },
+                    viernes: { title: `Viernes - ${phase}`, activity: "Habilidades y estrategia", details: `<p><strong>Calentamiento:</strong> Activación muscular y rutinas de agilidad (15 min).</p><p><strong>Físico:</strong> ${weekActivities_7_8.viernes.physical} (40 min)</p><p><strong>Técnico:</strong> ${weekActivities_7_8.viernes.technical} (40 min)</p><p><strong>Mental:</strong> ${weekActivities_7_8.viernes.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos y rodillo de espuma (15 min).</p>` },
+                    sabado: { title: `Sábado - ${phase}`, activity: "Día de Partido", details: `<p><strong>Juego:</strong> Aplicar las habilidades entrenadas en un juego real. Calentamiento, estiramientos dinámicos y enfriamiento son esenciales.</p>` },
+                    domingo: { title: `Domingo - ${phase}`, activity: "Día de Descanso", details: `<p><strong>Descanso:</strong> Es un día de recuperación completa para que el cuerpo y la mente se regeneren. Evita actividades extenuantes.</p>` }
+                };
+
+                // Plans for 9-10 year olds
+                let weekActivities_9_10 = (phase === 'Pico de Rendimiento') ? peakPerformanceActivities_9_10 : dailyActivities_9_10[rotationIndex % dailyActivities_9_10.length];
+                planData['9-10'] = planData['9-10'] || {};
+                planData['9-10'][week] = {
+                    lunes: { title: `Lunes - ${phase}`, activity: "Agilidad, fuerza y técnica básica", details: `<p><strong>Calentamiento:</strong> Estiramientos dinámicos y movilidad articular (15 min).</p><p><strong>Físico:</strong> ${weekActivities_9_10.lunes.physical} (45 min)</p><p><strong>Técnico:</strong> ${weekActivities_9_10.lunes.technical} (45 min)</p><p><strong>Mental:</strong> ${weekActivities_9_10.lunes.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos y rodillo de espuma (15 min).</p>` },
+                    martes: { title: `Martes - ${phase}`, activity: "Velocidad y bateo", details: `<p><strong>Calentamiento:</strong> Calentamiento con ejercicios cardiovasculares ligeros (15 min).</p><p><strong>Físico:</strong> ${weekActivities_9_10.martes.physical} (45 min)</p><p><strong>Técnico:</strong> ${weekActivities_9_10.martes.technical} (45 min)</p><p><strong>Mental:</strong> ${weekActivities_9_10.martes.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos de piernas y cadera (15 min).</p>` },
+                    miercoles: { title: `Miércoles - ${phase}`, activity: "Fuerza y lanzamiento", details: `<p><strong>Calentamiento:</strong> Movilidad de hombros y estiramientos dinámicos (15 min).</p><p><strong>Físico:</strong> ${weekActivities_9_10.miercoles.physical} (45 min)</p><p><strong>Técnico:</strong> ${weekActivities_9_10.miercoles.technical} (45 min)</p><p><strong>Mental:</strong> ${weekActivities_9_10.miercoles.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos de hombros y espalda (15 min).</p>` },
+                    jueves: { title: `Jueves - ${phase}`, activity: "Habilidades y estrategia", details: `<p><strong>Calentamiento:</strong> Ejercicios de activación y movilidad específicos de la posición. (15 min)</p><p><strong>Físico:</strong> ${weekActivities_9_10.jueves.physical} (45 min)</p><p><strong>Técnico:</strong> ${weekActivities_9_10.jueves.technical} (45 min)</p><p><strong>Mental:</strong> ${weekActivities_9_10.jueves.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos para prevenir lesiones. (15 min)</p>` },
+                    viernes: { title: `Viernes - ${phase}`, activity: "Habilidades y estrategia", details: `<p><strong>Calentamiento:</strong> Activación muscular y rutinas de agilidad (15 min).</p><p><strong>Físico:</strong> ${weekActivities_9_10.viernes.physical} (45 min)</p><p><strong>Técnico:</strong> ${weekActivities_9_10.viernes.technical} (45 min)</p><p><strong>Mental:</strong> ${weekActivities_9_10.viernes.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos y rodillo de espuma (15 min).</p>` },
+                    sabado: { title: `Sábado - ${phase}`, activity: "Día de Partido", details: `<p><strong>Juego:</strong> Aplicar las habilidades entrenadas en un juego real. Calentamiento, estiramientos dinámicos y enfriamiento son esenciales.</p>` },
+                    domingo: { title: `Domingo - ${phase}`, activity: "Día de Descanso", details: `<p><strong>Descanso:</strong> Es un día de recuperación completa para que el cuerpo y la mente se regeneren. Evita actividades extenuantes.</p>` }
+                };
+
+                // Plans for 11-12 year olds
+                let weekActivities_11_12 = (phase === 'Pico de Rendimiento') ? peakPerformanceActivities_11_12 : dailyActivities_11_12[rotationIndex % dailyActivities_11_12.length];
+                planData['11-12'] = planData['11-12'] || {};
+                planData['11-12'][week] = {
+                    lunes: { title: `Lunes - ${phase}`, activity: "Fuerza, agilidad y técnica", details: `<p><strong>Calentamiento:</strong> Estiramientos dinámicos y movilidad articular (15 min).</p><p><strong>Físico:</strong> ${weekActivities_11_12.lunes.physical} (45 min)</p><p><strong>Técnico:</strong> ${weekActivities_11_12.lunes.technical} (45 min)</p><p><strong>Mental:</strong> ${weekActivities_11_12.lunes.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos y rodillo de espuma (15 min).</p>` },
+                    martes: { title: `Martes - ${phase}`, activity: "Velocidad y bateo", details: `<p><strong>Calentamiento:</strong> Calentamiento con ejercicios cardiovasculares ligeros (15 min).</p><p><strong>Físico:</strong> ${weekActivities_11_12.martes.physical} (45 min)</p><p><strong>Técnico:</strong> ${weekActivities_11_12.martes.technical} (45 min)</p><p><strong>Mental:</strong> ${weekActivities_11_12.martes.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos de piernas y cadera (15 min).</p>` },
+                    miercoles: { title: `Miércoles - ${phase}`, activity: "Potencia y lanzamiento", details: `<p><strong>Calentamiento:</strong> Movilidad de hombros y estiramientos dinámicos (15 min).</p><p><strong>Físico:</strong> ${weekActivities_11_12.miercoles.physical} (45 min)</p><p><strong>Técnico:</strong> ${weekActivities_11_12.miercoles.technical} (45 min)</p><p><strong>Mental:</strong> ${weekActivities_11_12.miercoles.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos de hombros y espalda (15 min).</p>` },
+                    jueves: { title: `Jueves - ${phase}`, activity: "Entrenamiento Especializado", details: `<p><strong>Calentamiento:</strong> Ejercicios de activación y movilidad específicos de la posición. (15 min)</p><p><strong>Físico:</strong> ${weekActivities_11_12.jueves.physical} (45 min)</p><p><strong>Técnico:</strong> ${weekActivities_11_12.jueves.technical} (45 min)</p><p><strong>Mental:</strong> ${weekActivities_11_12.jueves.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos para prevenir lesiones. (15 min)</p>` },
+                    viernes: { title: `Viernes - ${phase}`, activity: "Habilidades y estrategia", details: `<p><strong>Calentamiento:</strong> Activación muscular y rutinas de agilidad (15 min).</p><p><strong>Físico:</strong> ${weekActivities_11_12.viernes.physical} (45 min)</p><p><strong>Técnico:</strong> ${weekActivities_11_12.viernes.technical} (45 min)</p><p><strong>Mental:</strong> ${weekActivities_11_12.viernes.mental} (15 min)</p><p><strong>Enfriamiento:</strong> Estiramientos estáticos y rodillo de espuma (15 min).</p>` },
+                    sabado: { title: `Sábado - ${phase}`, activity: "Día de Partido", details: `<p><strong>Juego:</strong> Aplicar las habilidades entrenadas en un juego real. Calentamiento, estiramientos dinámicos y enfriamiento son esenciales.</p>` },
+                    domingo: { title: `Domingo - ${phase}`, activity: "Día de Descanso", details: `<p><strong>Descanso:</strong> Es un día de recuperación completa para que el cuerpo y la mente se regeneren. Evita actividades extenuantes.</p>` }
+                };
+            };
+
+            const weekSelect = document.getElementById('week-select');
+            const categorySelect = document.getElementById('category-select');
+            const dailyPlanContainer = document.getElementById('daily-plan-container');
+
+            for (let i = 1; i <= 40; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Semana ${i}`;
+                weekSelect.appendChild(option);
+                createWeeklyPlan(i);
+            }
+
+            function renderWeeklyPlan() {
+                const selectedWeek = weekSelect.value;
+                const selectedCategory = categorySelect.value;
+                dailyPlanContainer.innerHTML = '';
+                const weekData = planData[selectedCategory][selectedWeek];
+                console.log(`Cambiando a la semana ${selectedWeek} para la categoría ${selectedCategory}. Datos del plan:`, weekData);
+                if (!weekData) return;
+
+                const days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+                const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+                days.forEach((day, index) => {
+                    const cardData = weekData[day];
+                    const cardHtml = `
+                        <div class="daily-card p-6 rounded-xl shadow-md">
+                            <div class="daily-card-header flex items-center justify-between" data-day="${day}">
+                                <h3 class="text-xl font-bold">${dayNames[index]}</h3>
+                                <span class="text-xl">▼</span>
+                            </div>
+                            <div class="daily-card-content mt-4">
+                                <h4 class="text-lg font-semibold mb-2">${cardData.activity}</h4>
+                                ${cardData.details}
+                            </div>
+                        </div>
+                    `;
+                    dailyPlanContainer.innerHTML += cardHtml;
+                });
+
+                document.querySelectorAll('.daily-card-header').forEach(header => {
+                    header.addEventListener('click', (event) => {
+                        const content = header.nextElementSibling;
+                        content.classList.toggle('show');
+                        const arrow = header.querySelector('span');
+                        arrow.textContent = content.classList.contains('show') ? '▲' : '▼';
+                    });
+                });
+            }
+
+            weekSelect.addEventListener('change', renderWeeklyPlan);
+            categorySelect.addEventListener('change', renderWeeklyPlan);
+
+            renderWeeklyPlan();
+        });
+    </script>
+</body>
+</html>
